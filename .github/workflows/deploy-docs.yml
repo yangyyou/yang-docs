@@ -1,72 +1,49 @@
-name: 部署文档
+name: docs
 
-on: 
-  push: 
-    branches:
-      - main
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+on:
+  # 每当 push 到 main 分支时触发部署
+  push:
+    branches: [main]
+  # 手动触发部署
+  workflow_dispatch:
 
 jobs:
-  deploy-gh-pages:
+  docs:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
+          # “最近更新时间” 等 git 日志相关信息，需要拉取全部提交记录
           fetch-depth: 0
 
-      - name: 创建 .nojektll 文件
-        run: |
-          touch .nojekyll
-          echo "This file disables Jekyll processing" > .nojektll
-      
-      - name: 设置pnpm
+      - name: 设置 pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - name: 设置 Node.js
         uses: actions/setup-node@v4
         with:
+          # 选择要使用的 node 版本
           node-version: 22
+          # 缓存 pnpm 依赖
           cache: pnpm
 
       - name: 安装依赖
-        run: |
-          corepack enable
-          pnpm install --frozen-lockfile
-      
-      - name: 构建文档
-        env: 
-          NODE_OPTIONS: --max_old_space_size=8192
-        run: |
-          pnpm run docs:build
-          > src/.vuepress/dist/.nojektll
+        run: pnpm install --frozen-lockfile
 
-      # 确保输出目录也有 .nojekyll
-      - name: 在输出目录添加 .nojekyll
-        run: |
-          touch src/.vuepress/dist/.nojekyll
+      # 运行构建脚本
+      - name: 构建 VuePress 站点
+        run: pnpm docs:build
 
-      - name: 设置 Pages
-        uses: actions/configure-pages@v4
-
-      - name: 上传构建产物
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: src/.vuepress/dist
-    
+      # 查看 workflow 的文档来获取更多信息
+      # @see https://github.com/crazy-max/ghaction-github-pages
       - name: 部署到 GitHub Pages
-        uses: actions/deploy-pages@v4
-        
-      # - name: 部署文档
-      #   uses: JamesIves/github-pages-deploy-action@v4
-      #   with:
-      #     # 部署文档
-      #     branch: gh-pages
-      #     folder: src/.vuepress/dist
-
+        uses: crazy-max/ghaction-github-pages@v4
+        with:
+          # 部署到 gh-pages 分支
+          target_branch: gh-pages
+          # 部署目录为 VuePress 的默认输出目录
+          build_dir: docs/.vuepress/dist
+        env:
+          # @see https://docs.github.com/cn/actions/reference/authentication-in-a-workflow#about-the-github_token-secret
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
