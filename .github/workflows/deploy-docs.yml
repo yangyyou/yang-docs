@@ -18,6 +18,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: 创建 .nojektll 文件
+        run: |
+          touch .nojekyll
+          echo "This file disables Jekyll processing" > .nojektll
       
       - name: 设置pnpm
         uses: pnpm/action-setup@v4
@@ -41,15 +46,27 @@ jobs:
         run: |
           pnpm run docs:build
           > src/.vuepress/dist/.nojektll
-        
-      - name: 创建 .nojektll 文件
+
+      # 确保输出目录也有 .nojekyll
+      - name: 在输出目录添加 .nojekyll
         run: |
-          echo "" > src/.vuepress/dist/.nojektll
-          
-      - name: 部署文档
-        uses: JamesIves/github-pages-deploy-action@v4
+          touch src/.vuepress/dist/.nojekyll
+
+      - name: 设置 Pages
+        uses: actions/configure-pages@v4
+
+      - name: 上传构建产物
+        uses: actions/upload-pages-artifact@v3
         with:
-          # 部署文档
-          branch: gh-pages
-          folder: src/.vuepress/dist
+          path: src/.vuepress/dist
+    
+      - name: 部署到 GitHub Pages
+        uses: actions/deploy-pages@v4
+        
+      # - name: 部署文档
+      #   uses: JamesIves/github-pages-deploy-action@v4
+      #   with:
+      #     # 部署文档
+      #     branch: gh-pages
+      #     folder: src/.vuepress/dist
 
