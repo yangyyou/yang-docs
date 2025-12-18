@@ -6,7 +6,9 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   deploy-gh-pages:
@@ -40,9 +42,14 @@ jobs:
           pnpm run docs:build
           > src/.vuepress/dist/.nojektll
         
+      - name: 创建 .nojektll 文件
+        run: |
+          echo "" > src/.vuepress/dist/.nojektll
+          
       - name: 部署文档
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           # 部署文档
           branch: gh-pages
           folder: src/.vuepress/dist
+
